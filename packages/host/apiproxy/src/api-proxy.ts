@@ -17,7 +17,8 @@ import type { ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
 import { contentHasImage, createUserMessage, freezeMessage, ReasoningEffortId } from '@deepseek-ai/dsh-llm'
 import { errorChain } from '@deepseek-ai/dsh-llm'
 import type { ContentBlock, MessageSource } from '@deepseek-ai/dsh-llm'
-import { isAppendSurfaceEvent, isJsonValue } from '@deepseek-ai/dsh-session'
+import { isTokenDelta } from '@deepseek-ai/dsh-llm/message'
+import { isAppendSurfaceEvent, isJsonValue, isSurfaceEvent } from '@deepseek-ai/dsh-session'
 import type { JsonValue, Session, SessionEvent, SessionEventMap, SessionHeader, SessionId, UserMessage } from '@deepseek-ai/dsh-session'
 import type { SessionPersistence } from '@deepseek-ai/dsh-session-persistence'
 // Type-only: resolves the optional permission-default owner notified after
@@ -752,6 +753,50 @@ function backscanArgs(events: readonly SessionEvent[], callId: string): { name: 
   return undefined
 }
 
+/** Composite key for one assistant step (mirrors the client's assistantStepKey). */
+function assistantStepKey(turn: number, step: number): string {
+  return `${turn}\u0000${step}`
+}
+
+/**
+ * Presentation-page reduction for the history wire. A page's `assistant/chunk`
+ * events for a step whose append-surface `assistant/message` is in the same
+ * page are redundant — the message already carries the final blocks and usage —
+ * and dominate the payload (#2119: ~99% of a high-reasoning tail page). Only
+ * the step's first non-empty token delta is kept, so the client's step timing
+ * (TTFT / tok/s) survives a fresh window load; steps with no in-page completed
+ * message (in-progress partials, interrupted steps) keep every chunk, because
+ * the client reconstructs their content from chunks. `sourceEventSeqs` (the
+ * chunk-seq index, up to ~10^5 numbers on one message) is stripped from every
+ * shipped event: only the server's `paginate` grouping reads it.
+ * @param events - one paginated page, ascending by seq.
+ * @returns the page reduced for presentation, same order.
+ */
+function reduceHistoryEvents(events: readonly SessionEvent[]): SessionEvent[] {
+  const completedSteps = new Set<string>()
+  for (const event of events) {
+    if (event.type === 'assistant/message' && isAppendSurfaceEvent(event)) {
+      completedSteps.add(assistantStepKey(event.data.turn, event.data.step))
+    }
+  }
+  const keptFirstDelta = new Set<string>()
+  const reduced: SessionEvent[] = []
+  for (const event of events) {
+    if (event.type === 'assistant/chunk' && completedSteps.has(assistantStepKey(event.data.turn, event.data.step))) {
+      const key = assistantStepKey(event.data.turn, event.data.step)
+      if (keptFirstDelta.has(key) || !isTokenDelta(event.data.chunk)) continue
+      keptFirstDelta.add(key)
+    }
+    if (!isSurfaceEvent(event) || event.sourceEventSeqs === undefined) {
+      reduced.push(event)
+    } else {
+      const { sourceEventSeqs: _omitted, ...rest } = event
+      reduced.push(rest)
+    }
+  }
+  return reduced
+}
+
 /** Render one detached history page through the same presenter path as ordinary history. */
 function historyPage(
   ctx: Context,
@@ -761,8 +806,9 @@ function historyPage(
   scope?: ScopeKey,
 ): { events: HistoryEntry[]; hasMore: boolean } {
   const page = paginate(events, beforeSeq, maxMessages ?? DEFAULT_MAX_MESSAGES)
+  const shipped = reduceHistoryEvents(page.events)
   return {
-    events: page.events.map((event) => {
+    events: shipped.map((event) => {
       const view = viewFor(ctx, event, callId => backscanArgs(page.events, callId), scope)
       return { event, ...view === undefined ? {} : { view } }
     }),

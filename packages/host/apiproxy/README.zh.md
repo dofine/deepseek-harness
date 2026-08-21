@@ -24,7 +24,7 @@ Settings 分节中的 `reasoningEffort` 在 agent-default-model 插件配置中�
 
 首个回答认领待处理请求之前，系统会对照该请求校验问题响应。多选题的回答项可以同时携带 `selected` 中的请求选项标签与非空 `custom` 文本；单选题的回答项必须二选一。标签重复、标签未知、id 不匹配、批次不完整以及自定义文本为空都会以 `bad-response` 拒绝。
 
-`session.history` 会读取已附加 Session 的内存状态，或通过持久化检查冷日志，而不会恢复或发布 agent，然后按追加来源的消息边界分页：`maxMessages` 统计以追加方式进入 surface 的 `user/message` 和 `assistant/message` 事件，因此仅供模型使用的替换副本不占用配额。每一页仍是一段连续的原始事件区间，从而让压缩（compaction）的仅日志 `compaction/summary` 记录与引用它的替换留在同一页。
+`session.history` 会读取已附加 Session 的内存状态，或通过持久化检查冷日志，而不会恢复或发布 agent，然后按追加来源的消息边界分页：`maxMessages` 统计以追加方式进入 surface 的 `user/message` 和 `assistant/message` 事件，因此仅供模型使用的替换副本不占用配额。每一页仍是一段连续的原始事件区间，从而让压缩（compaction）的仅日志 `compaction/summary` 记录与引用它的替换留在同一页。下发的页面按展示用途做了缩减：对页面上存在已完成追加来源 `assistant/message` 的 step，其 `assistant/chunk` 事件折叠为首个非空 token delta（这样客户端在一次全新窗口加载后仍能算出 step 时序），每个下发事件的 `sourceEventSeqs` 都被剥离（只有服务端的消息边界分组会读它），而被打断或进行中的 step 会保留全部 chunk，因为客户端要靠它们重建内容。
 
 `session.history` 的尾页（不带 `beforeSeq`）额外携带一个可选的 `projections` 块——`ctx.sessionProjections`（`@deepseek-ai/dsh-session-projection`）上每个已注册单元的水位线快照，`asOfSeq` = 这些值共同反映到的最后一个事件 seq（空日志为 `-1`）。网关还订阅注册表的变更流，为每个状态发生变化的单元生成一个 `session/projection` mux 帧（`{sessionId, key, value, seq}`——实时推送状态，绝不入日志；客户端按 seq 高者胜维护一个按会话的通用值仓）。载体不持有其他领域的知识（每个值在注册表内部已过其单元自己的 schema；协议 schema 对 `values`/`value` 保持宽松）；loadOlder 页永不携带该块，未装注册表的组合则两个面都不提供。网关拥有两个单元：`sessionListMetadata` 缓存用于 `session.list` 的单调 blank→nonblank 转换与最新真人 prompt 时间；`imageLimits` 则把 prompt 准入时执行的 attachments 配置作为每次启动恒定的值发布（`apply` 保持状态引用不变，因此只靠基线携带、绝不产生变更帧），供客户端在提交前拒绝超限的加入并给上传入口标注上限，后者仅在注册表与 attachments 服务同时组合时激活。
 

@@ -317,7 +317,9 @@ describe('mux live view computation', () => {
         payload: { sessionId: session.id, maxMessages: 1 },
       })
       if (!response.result.ok) throw new Error('unreachable')
-      expect(response.result.value.events.map(entry => entry.event.seq)).toEqual([...sources, message.seq])
+      // The page cuts at the message group's first source; the completed step's
+      // chunks reduce to that first token delta.
+      expect(response.result.value.events.map(entry => entry.event.seq)).toEqual([sources[0]!, message.seq])
       expect(response.result.value.hasMore).toBe(true)
     } finally {
       min.mockRestore()
