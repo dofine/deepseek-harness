@@ -193,8 +193,10 @@ function makeHarness(init?: Partial<ConversationSnapshot>) {
         ? location.turn.data.get(dataKey)
         : undefined
     })
+    const useTruncateMessageChars = ((sel: (value: number) => number) => sel(0)) as
+      ChatNodeViewProps<'assistant-step'>['useTruncateMessageChars']
     const nodeProps = <Kind extends ChatNode['kind']>(): ChatNodeViewProps<Kind> => (
-      { ...props, ...nodeOwner, useTurnData } as unknown as ChatNodeViewProps<Kind>
+      { ...props, ...nodeOwner, useTurnData, useTruncateMessageChars } as unknown as ChatNodeViewProps<Kind>
     )
     switch (nodeOwner.node.kind) {
       case 'user':

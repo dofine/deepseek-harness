@@ -289,6 +289,7 @@ function panelProps(data: WorkflowRunChatData, sessions = listState(), openSessi
     inputActions: { setDraft: () => {}, submit: () => {} } as unknown as WorkflowRunPanelProps['inputActions'],
     useWorkspaces: (() => undefined) as WorkflowRunPanelProps['useWorkspaces'],
     useTurnData: () => undefined,
+    useTruncateMessageChars: ((sel: (value: number) => number) => sel(0)) as WorkflowRunPanelProps['useTruncateMessageChars'],
     selectedCallId: undefined,
     cwd: undefined,
     openFile: () => {},

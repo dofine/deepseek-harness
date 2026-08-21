@@ -1,6 +1,6 @@
 /** Registers the conversation components, shared store, and service callbacks. */
 import type { Context } from '@deepseek-ai/cordis'
-import { resolveSlotLabel, type BoundActions } from '@deepseek-ai/dsh-client-ui-slots'
+import { resolveSlotLabel, type BoundActions, type HostObservable } from '@deepseek-ai/dsh-client-ui-slots'
 import {
   resolveWorkspacePath, type ISessions, type SessionId,
 } from '@deepseek-ai/dsh-client-runtime/client'
@@ -24,6 +24,7 @@ import { ComposerBlockRegistry } from './input/blocks.ts'
 import type { ComposerBlock } from './input/blocks.ts'
 import { InputHub } from './input/hub.ts'
 import { ComposerSubmissionPolicy } from './input/submission-policy.ts'
+import { MessageTruncationPolicy } from './chat/truncation-policy.ts'
 import { InputBar } from './skeleton/InputBar.tsx'
 import { EnterBehaviorRow } from './settings/EnterBehaviorRow.tsx'
 import type { EnterBehaviorRowInjected } from './settings/EnterBehaviorRow.tsx'
@@ -75,17 +76,20 @@ const ABSENT_MENU_LAUNCHER = {
   subscribe: () => () => {},
 }
 
-const CHAT_NODE_INJECT: ChatNodeTurnDataInjected = {
-  hooks: {
-    turnData: ({ useSession }, nodeKey) => function useTurnData(key) {
-      return useSession((snapshot) => {
-        const location = snapshot.chat.nodes.get(nodeKey)?.location
-        return location?.kind === 'turn' || location?.kind === 'step'
-          ? location.turn.data.get(key)
-          : undefined
-      })
+function createChatNodeInject(truncateMessageChars: HostObservable<number>): ChatNodeTurnDataInjected {
+  return {
+    hooks: {
+      turnData: ({ useSession }, nodeKey) => function useTurnData(key) {
+        return useSession((snapshot) => {
+          const location = snapshot.chat.nodes.get(nodeKey)?.location
+          return location?.kind === 'turn' || location?.kind === 'step'
+            ? location.turn.data.get(key)
+            : undefined
+        })
+      },
+      truncateMessageChars,
     },
-  },
+  }
 }
 
 /** Resolve the session-scoped conversation face (scope-addressed send/cancel), failing loud. */
@@ -131,6 +135,9 @@ export function apply(ctx: Context): void {
   // Apply-time construction keeps store identity bound to this fiber.
   const chatStore = createChatStore()
   const submissionPolicy = new ComposerSubmissionPolicy(
+    ctx.settingsScope.bind<ConversationSettings>({ namespace: CONVERSATION_SETTINGS_NAMESPACE }),
+  )
+  const truncation = new MessageTruncationPolicy(
     ctx.settingsScope.bind<ConversationSettings>({ namespace: CONVERSATION_SETTINGS_NAMESPACE }),
   )
 
@@ -384,7 +391,7 @@ export function apply(ctx: Context): void {
     label: () => t('view.chat'),
     locale: NS,
     children: {
-      'conversation.chat.node': { kind: 'keyed', scope: 'session', inject: CHAT_NODE_INJECT },
+      'conversation.chat.node': { kind: 'keyed', scope: 'session', inject: createChatNodeInject(truncation.truncateMessageChars) },
       'conversation.message.images': { kind: 'single', scope: 'session' },
     },
     store: chatStore,
