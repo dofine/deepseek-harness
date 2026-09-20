@@ -59,13 +59,18 @@ export const ChatNodeSeat = memo(function ChatNodeSeat({
       actions.setTurnProcessOpen(processSpec.turn, processSpec.answerStep, open)
     }
   }, [actions, processSpec])
+  // A Turn folds once its own events are loaded. The loaded window is a
+  // contiguous suffix, so a missing `turn/start` means this Turn was cut by the
+  // window head: its process range and counts are unknowable, and folding would
+  // hide rows the reader cannot load back. Unloaded older history alone does not
+  // disqualify a Turn that the window already covers in full.
   const processWindowReady = processSpec !== undefined
     && processPresentation !== undefined
     && compactTranscript
     && processSpec.answerAnchorSeq !== null
     && processPresentation.turn === processSpec.turn
     && processPresentation.turnClosed
-    && !historyIncomplete
+    && (processPresentation.turnStartLoaded || !historyIncomplete)
   const processMember = routedNode !== undefined
     && processWindowReady
     && !TURN_PROCESS_INDEPENDENT_KINDS.has(routedNode.kind)

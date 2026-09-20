@@ -418,12 +418,24 @@ async function bootPreview(origin: string, browser: Browser): Promise<void> {
     await page.getByText(SHOWCASE_TAIL, { exact: true }).waitFor({ timeout: 30_000 })
 
     expect(await page.getByText(SHOWCASE_OLDEST, { exact: true }).count()).toBe(0)
+    // Card content lives in process rows. Older history still waits behind Load
+    // earlier, so every closed Turn the window covers folds by default: the
+    // groups exist, and opening them restores the cards this milestone reads.
+    await expect.poll(
+      () => page.locator('[data-turn-process][aria-expanded="false"]').count(),
+      { timeout: 15_000 },
+    ).toBeGreaterThan(0)
+    for (const control of await page.locator('[data-turn-process][aria-expanded="false"]').all()) {
+      await control.click()
+    }
     await page.getByRole('button', { name: 'PREVIEW.md', exact: true }).waitFor()
     await page.getByRole('button', { name: 'src/preview.ts', exact: true }).waitFor()
     await page.getByText('Update to-do list', { exact: true }).waitFor()
     await page.getByText('Error: ENOENT: no such file, open missing.txt', { exact: true }).waitFor()
 
-    const subagents = page.getByRole('button', { name: '2 subagents' })
+    // Exact: the Turn-process control's own summary ends with the same
+    // "2 subagents" phrase, so only the badge carries the label alone.
+    const subagents = page.getByRole('button', { name: '2 subagents', exact: true })
     await subagents.waitFor({ timeout: 15_000 })
     await subagents.hover()
     const catalog = page.getByRole('tree', { name: 'Subagent sessions' })

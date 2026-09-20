@@ -519,6 +519,15 @@ describe('web e2e: long Chat scroll contract', () => {
       )
       await expectBottom(world.page)
 
+      // Older history still waits behind Load earlier, yet every covered closed
+      // Turn already folds: only the window-head Turn, cut by the oldest loaded
+      // page, stays expanded until its own `turn/start` arrives with a page.
+      expect(await world.page.getByRole('button', { name: 'Load earlier', exact: true }).count()).toBe(1)
+      await expect.poll(
+        () => world.page.locator('[data-turn-process][aria-expanded="false"]').count(),
+        { timeout: 15_000 },
+      ).toBeGreaterThan(0)
+
       let releaseHistory = (): void => {}
       let held = false
       let releaseGate: (() => void) | undefined

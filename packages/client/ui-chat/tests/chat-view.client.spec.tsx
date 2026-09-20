@@ -1687,7 +1687,11 @@ describe('ChatView', () => {
     expect(contextRow?.getAttribute('hidden')).toBe('until-found')
   })
 
-  it('keeps a foldable closed Turn fully visible while history is partial', () => {
+  it('keeps a Turn cut by the loaded window head expanded while older history remains', () => {
+    // Without `turnTimings` the fixture records no `turn/start`, which is what a
+    // Turn truncated by the oldest loaded page looks like: its process range and
+    // its counts are unknowable, so folding it would hide rows the reader cannot
+    // load back.
     const h = makeHarness({
       nodes: [
         user(1, 'question'),
@@ -1711,7 +1715,29 @@ describe('ChatView', () => {
     expect(contextRow?.getAttribute('hidden')).toBe('until-found')
   })
 
-  it('withholds process controls for partial history and folds final-page groups', () => {
+  it('folds a closed Turn the loaded window covers in full while older history remains', () => {
+    // A recorded `turn/start` proves every event of this Turn is loaded, even
+    // though earlier Turns still wait behind Load earlier.
+    const h = makeHarness({
+      nodes: [
+        user(1, 'question'),
+        context(2, 'runtime policy', 1),
+        assistant(3, 'working', 1, 1),
+        assistant(4, 'final answer', 1, 2),
+      ],
+      turnTimings: new Map([[1, { startTime: 1_000 }]]),
+      turnEnds: new Map([[1, 5]]),
+      hasMore: true,
+    })
+    const view = render(<h.ChatView {...h.props} />)
+    const contextRow = view.container.querySelector<HTMLElement>('[data-chat-flow-kind="context"]')
+
+    const toggle = turnProcessControl(view.container)!
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    expect(contextRow?.getAttribute('hidden')).toBe('until-found')
+  })
+
+  it('folds a Turn once a loaded page supplies its start', () => {
     const h = makeHarness({
       nodes: [user(9, 'visible question'), assistant(10, 'visible answer', 2)],
       hasMore: true,
@@ -1728,8 +1754,9 @@ describe('ChatView', () => {
           user(9, 'visible question'),
           assistant(10, 'visible answer', 2),
         ],
+        turnTimings: new Map([[1, { startTime: 1_000 }]]),
         turnEnds: new Map([[1, 5]]),
-        hasMore: false,
+        hasMore: true,
       })
     })
 

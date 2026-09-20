@@ -1329,6 +1329,35 @@ describe('built-in conversation node Definitions', () => {
     ])
   })
 
+  it('marks a Turn covered in full once pagination supplies its start event', () => {
+    // The window is a contiguous log suffix, so the Turn the head cuts has no
+    // `turn/start`: its process range and counts are unknowable and it stays
+    // expanded. Loading the page that records that event covers it in full.
+    const value = assembler([
+      at(3, 'user/message', textMessage('window-user', 'question'), { surfaceOp: 'append' }),
+      at(4, 'step/start', { turn: 1, step: 1 }),
+      at(5, 'assistant/message', {
+        turn: 1,
+        step: 1,
+        message: assistantMessage('window-assistant', 'answer'),
+      }, { surfaceOp: 'append' }),
+      at(6, 'step/end', { turn: 1, step: 1 }),
+      at(7, 'turn/end', { turn: 1, reason: { kind: 'completed' } }),
+    ], true)
+    const controlKey = (view: ChatSnapshot): string =>
+      view.order.find(key => view.nodes.get(key)?.kind === 'turn-process') ?? ''
+    const truncated = snapshot(value)
+    expect(truncated.nodes.processSource(controlKey(truncated)).getSnapshot()?.turnStartLoaded).toBe(false)
+
+    value.prepend([
+      at(1, 'turn/start', { turn: 1 }),
+    ], true)
+    value.flush()
+
+    const covered = snapshot(value)
+    expect(covered.nodes.processSource(controlKey(covered)).getSnapshot()?.turnStartLoaded).toBe(true)
+  })
+
   it('appends a later turn without replacing nodes from the completed turn', () => {
     const value = assembler([
       at(1, 'turn/start', { turn: 1 }),
