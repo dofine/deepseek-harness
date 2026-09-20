@@ -235,7 +235,11 @@ export function apply(ctx: Context, config: Config = {}): void {
   ctx.systemPrompt.section({
     name: 'tool:bash',
     order: ctx.systemPrompt.getSectionOrder('TOOL_BASH'),
-    text: 'Check the [exit code: N] marker on every bash result; investigate failures before moving on.',
+    text: 'Check the [exit code: N] marker on every bash result; investigate failures before moving on. '
+      + 'Use bash for commands, builds, tests, and version control — not for editing files by hand '
+      + '(`sed -i`, `perl -pi`, `python`/`node` scripts, redirection): shell edits bypass the version guard '
+      + 'and the read-before-edit policy, so use the write and edit tools instead. Running the project\'s '
+      + 'own formatter or code generator is still expected.',
   })
 
   ctx.tools.register(defineTool({

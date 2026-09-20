@@ -384,7 +384,7 @@ describe('bash tool', () => {
     expect(bashSchema.description).toContain('job_output')
   })
 
-  it('contributes the exit-code habit as its prompt section (guidance the descriptions cannot carry)', async () => {
+  it('contributes the exit-code habit and the no-hand-editing rule as its prompt section (guidance the descriptions cannot carry)', async () => {
     const ctx = await setup()
     ctx.systemPrompt.section({
       name: 'test:before-bash',
@@ -407,6 +407,8 @@ describe('bash tool', () => {
       'deployment:persona-suffix',
     ])
     expect(section?.text).toContain('[exit code: N]')
+    expect(section?.text).toContain('not for editing files by hand')
+    expect(section?.text).toContain('use the write and edit tools instead')
   })
 
   it('unregisters everything when the plugin fiber is disposed (HMR safety)', async () => {

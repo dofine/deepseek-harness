@@ -66,7 +66,7 @@ export function applyWriteTool(ctx: Context, sandbox: FsSandboxController): void
       ? ''
       : 'Use the write tool to create files or completely replace file contents. Existing files are overwritten, so read an existing file first (the default fs-observation-policy requires it)'
         + (ctx.tools.get('edit', scope) === undefined ? '' : ' and prefer edit for targeted changes')
-        + '.',
+        + '. Create or replace files with this tool, never with a shell command (`>` redirection, `tee`, or a heredoc): shell writes bypass the version guard and can corrupt a file.',
   })
 
   ctx.tools.register(defineTool({

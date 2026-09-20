@@ -131,7 +131,7 @@ kind: "package-reference"
 ##### Bash 指引
 
 ```markdown
-Check the [exit code: N] marker on every bash result; investigate failures before moving on.
+Check the [exit code: N] marker on every bash result; investigate failures before moving on. Use bash for commands, builds, tests, and version control — not for editing files by hand (`sed -i`, `perl -pi`, `python`/`node` scripts, redirection): shell edits bypass the version guard and the read-before-edit policy, so use the write and edit tools instead. Running the project's own formatter or code generator is still expected.
 ```
 
 #### Token 影响

@@ -358,6 +358,7 @@ describe('registration', () => {
     const prompt = renderPrompt(await ctx.systemPrompt.assemble())
     expect(prompt).toContain('Non-zero exits are reported as `[exit code: N]` markers')
     expect(prompt).toContain('without a signal marker')
+    expect(prompt).toContain('it is not the way to edit files')
   })
 
   it('stays pending until ctx.shell exists (inject)', async () => {
