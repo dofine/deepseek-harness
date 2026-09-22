@@ -1,6 +1,7 @@
 # Agent Note: Turn-process folding follows loaded window coverage
 
 Status: implemented
+Archived: 2026-09-22
 
 English | [中文](2026-09-21-turn-process-window-coverage.zh.md)
 

@@ -1518,10 +1518,10 @@ describe('built-in conversation node Definitions', () => {
     ])
   })
 
-  it('marks a Turn covered in full once pagination supplies its start event', () => {
-    // The window is a contiguous log suffix, so the Turn the head cuts has no
-    // `turn/start`: its process range and counts are unknowable and it stays
-    // expanded. Loading the page that records that event covers it in full.
+  it('republishes a Turn start fact when pagination supplies that event', () => {
+    // Whole-Turn folding reads the loaded lifecycle facts, so the retained
+    // process source must report the Turn's start the moment the page recording
+    // it arrives, without waiting for a reload.
     const value = assembler([
       at(3, 'user/message', textMessage('window-user', 'question'), { surfaceOp: 'append' }),
       at(4, 'step/start', { turn: 1, step: 1 }),
@@ -1536,7 +1536,7 @@ describe('built-in conversation node Definitions', () => {
     const controlKey = (view: ChatSnapshot): string =>
       view.order.find(key => view.nodes.get(key)?.kind === 'turn-process') ?? ''
     const truncated = snapshot(value)
-    expect(truncated.nodes.processSource(controlKey(truncated)).getSnapshot()?.turnStartLoaded).toBe(false)
+    expect(truncated.nodes.processSource(controlKey(truncated)).getSnapshot()?.turnStarted).toBe(false)
 
     value.prepend([
       at(1, 'turn/start', { turn: 1 }),
@@ -1544,7 +1544,7 @@ describe('built-in conversation node Definitions', () => {
     value.flush()
 
     const covered = snapshot(value)
-    expect(covered.nodes.processSource(controlKey(covered)).getSnapshot()?.turnStartLoaded).toBe(true)
+    expect(covered.nodes.processSource(controlKey(covered)).getSnapshot()?.turnStarted).toBe(true)
   })
 
   it('appends a later turn without replacing nodes from the completed turn', () => {

@@ -86,13 +86,6 @@ export interface ChatTurnProcessPresentation {
   /** Whether the loaded window contains this Turn's `turn/start`; folding is decided per Turn on this fact. */
   readonly turnStarted: boolean
   readonly turnClosed: boolean
-  /**
-   * Whether the loaded window contains this Turn's own `turn/start` event. The
-   * window is a contiguous suffix of the log, so a loaded `turn/start` proves
-   * every event of the Turn is loaded, while a Turn cut by the window head
-   * cannot fold: its process range start and its counts are unknowable.
-   */
-  readonly turnStartLoaded: boolean
   readonly hasExternalProcess: boolean
   /** A visible input after process output prevents one disclosure from hiding its surrounding groups. */
   readonly hasInterleavedInput: boolean

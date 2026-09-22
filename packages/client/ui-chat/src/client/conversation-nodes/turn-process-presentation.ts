@@ -19,7 +19,6 @@ function samePresentation(
     && left.turn === right.turn
     && left.turnStarted === right.turnStarted
     && left.turnClosed === right.turnClosed
-    && left.turnStartLoaded === right.turnStartLoaded
     && left.hasExternalProcess === right.hasExternalProcess
     && left.hasInterleavedInput === right.hasInterleavedInput
     && left.compactAnswer === right.compactAnswer)
@@ -71,7 +70,6 @@ function derivePresentation(
     spec,
     turnStarted: location.turn.start !== undefined,
     turnClosed: location.turn.status === 'closed',
-    turnStartLoaded: location.turn.start !== undefined,
     hasExternalProcess,
     hasInterleavedInput,
     compactAnswer,
