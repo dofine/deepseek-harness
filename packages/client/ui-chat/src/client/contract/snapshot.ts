@@ -1,7 +1,8 @@
 import type {
   ConversationNode, ConversationTimelineSnapshot, PartialAssistant, RunningToolCall,
 } from '@deepseek-ai/dsh-client-ui-conversation/client'
-import type { ChatConversationViewNode } from './chat-nodes.ts'
+import type { ChatConversationViewNode, ChatNodeDataMap, ChatNodeKind } from './chat-nodes.ts'
+import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
 import type { TurnProcessSpec } from './turn-process.ts'
 
 export type {
@@ -34,6 +35,14 @@ export interface ChatNodeStore {
   get(key: string): ChatConversationViewNode | undefined
   /** @param key - stable Conversation Context key. @returns its identity-stable observable source. */
   source(key: string): ChatNodeSource
+  /**
+   * Observe one Turn's data for a single Node kind, including hidden Nodes, in anchor order.
+   * Other Turns and kinds do not notify this source.
+   * @param turn - resolved owning Turn.
+   * @param kind - business Node kind.
+   * @returns an identity-stable source whose array changes only with its members.
+   */
+  turnDataSource<Kind extends ChatNodeKind>(turn: number, kind: Kind): ObservableSnapshot<readonly ChatNodeDataMap[Kind][]>
   /** @param key - stable Conversation Context key. @returns its Turn-process presentation source. */
   processSource(key: string): ChatNodeProcessSource
   /** @returns all currently materialized Nodes without imposing render order. */
@@ -74,6 +83,8 @@ export interface ChatLocationNodeIndex {
 export interface ChatTurnProcessPresentation {
   readonly turn: number
   readonly spec: TurnProcessSpec
+  /** Whether the loaded window contains this Turn's `turn/start`; folding is decided per Turn on this fact. */
+  readonly turnStarted: boolean
   readonly turnClosed: boolean
   /**
    * Whether the loaded window contains this Turn's own `turn/start` event. The
@@ -83,6 +94,8 @@ export interface ChatTurnProcessPresentation {
    */
   readonly turnStartLoaded: boolean
   readonly hasExternalProcess: boolean
+  /** A visible input after process output prevents one disclosure from hiding its surrounding groups. */
+  readonly hasInterleavedInput: boolean
   readonly compactAnswer: boolean
 }
 
@@ -121,6 +134,10 @@ const EMPTY_NODE_PROCESS_SOURCE: ChatNodeProcessSource = {
   getSnapshot: () => undefined,
   subscribe: () => () => {},
 }
+const EMPTY_TURN_NODE_SOURCE: ObservableSnapshot<readonly never[]> = {
+  getSnapshot: () => EMPTY_LIST,
+  subscribe: () => () => {},
+}
 
 /** Empty Chat target used before a view builder is registered. */
 export const EMPTY_CHAT_SNAPSHOT: ChatSnapshot = {
@@ -128,6 +145,7 @@ export const EMPTY_CHAT_SNAPSHOT: ChatSnapshot = {
   nodes: {
     get: () => undefined,
     source: () => EMPTY_NODE_SOURCE,
+    turnDataSource: () => EMPTY_TURN_NODE_SOURCE,
     processSource: () => EMPTY_NODE_PROCESS_SOURCE,
     values: () => EMPTY_LIST,
   },
