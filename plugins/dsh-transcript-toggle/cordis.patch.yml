@@ -1,7 +1,0 @@
-# Applied when this package is listed in a profile's dsh.profile.bundles.
-# The row's host half is intentionally empty: the browser half registers the
-# header toggle, which drives the ui-chat transcript preference the Chat target
-# already owns.
-- insert:
-    - id: transcript-toggle
-      name: dsh-transcript-toggle
