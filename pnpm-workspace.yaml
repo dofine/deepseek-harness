@@ -1,11 +1,6 @@
 packages:
   - vendor/*
   - packages/*/*
-  # Fork-local plugins: versioned here but never published, so the manifest is
-  # "private": true and stays outside the packages/ release-member policy.
-  # Named one by one: plugins/ also holds plain-JavaScript bundles that have no
-  # TypeScript build, and a glob would sweep them into the build lane.
-  - plugins/dsh-shell-edit-guard
   # The Landlock launcher is developed with its harness consumers but keeps
   # its native build and publication scripts under native/system.
   - native/system

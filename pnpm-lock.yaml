@@ -13448,27 +13448,6 @@ importers:
         specifier: workspace:*
         version: link:../../typert/protocol
 
-  plugins/dsh-shell-edit-guard:
-    devDependencies:
-      '@deepseek-ai/cordis':
-        specifier: workspace:~
-        version: link:../../vendor/cordis
-      '@deepseek-ai/cordis-plugin-include':
-        specifier: workspace:~
-        version: link:../../vendor/include
-      '@deepseek-ai/cordis-plugin-loader':
-        specifier: workspace:~
-        version: link:../../vendor/loader
-      '@deepseek-ai/dsh-llm':
-        specifier: workspace:*
-        version: link:../../packages/llm/llm
-      '@deepseek-ai/dsh-system-prompt':
-        specifier: workspace:*
-        version: link:../../packages/core/system-prompt
-      '@deepseek-ai/dsh-tools':
-        specifier: workspace:*
-        version: link:../../packages/core/tools
-
   python/sdk-runtime:
     dependencies:
       '@deepseek-ai/cordis':
