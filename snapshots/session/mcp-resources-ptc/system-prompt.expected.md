@@ -11,9 +11,9 @@ Check the [exit code: N] marker on every bash result; investigate failures befor
 
 Use the read tool — not shell commands like cat — to inspect text files. Use offset and limit to continue reading large files.
 
-Read an existing file before overwriting it with write (the default fs-observation-policy requires it) and prefer edit for targeted changes.
+Read an existing file before overwriting it with write (the default fs-observation-policy requires it) and prefer edit for targeted changes. Create or replace files with this tool, never with a shell command (`>` redirection, `tee`, or a heredoc): shell writes bypass the version guard and can corrupt a file.
 
-Read a file before editing it (the default fs-observation-policy requires it), unless you just created or edited it in this session.
+Read a file before editing it (the default fs-observation-policy requires it), unless you just created or edited it in this session. Edit files with this tool, never with a shell command (`sed -i`, `perl -pi`, or a `python`/`node` script): shell edits bypass the version guard and the read-before-edit policy.
 
 Use the glob tool — not shell find — to discover files by path pattern.
 

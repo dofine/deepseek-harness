@@ -13,13 +13,13 @@ Prefer read/edit/write for file changes. If a file operation returns FS_STALE_VE
 
 Use the target returned by spawn_teammate or list_agents for send_message and interrupt_agent, or as owner when assigning or filtering shared tasks. send_message steers a running target at its nearest step boundary and starts or resumes an inactive target. inactive means no turn is executing; it does not describe task completion, success, failure, or waiting for other agents. provisioning means member creation is in progress; failed means member creation failed. A delivered peer item starts with its stable message id and sender name. A successful send is already durable even when its result says queued; do not resend it. Shared-task workflow is list, get, claim with the current revision, perform the work, then complete. Task readiness never starts an owner. Before wait_agent, use list_agents and make sure another required member is running or provisioning; use send_message first when the required member is inactive. wait_agent observes only changes after that call starts, never wakes a member, and returns noProgress immediately when no other member can produce a change. Re-list after wakeup or timeout. The Lead must wait for required teammates before giving the final answer.
 
-Check the [exit code: N] marker on every bash result; investigate failures before moving on.
+Check the [exit code: N] marker on every bash result; investigate failures before moving on. Use bash for commands, builds, tests, and version control — not for editing files by hand (`sed -i`, `perl -pi`, `python`/`node` scripts, redirection): shell edits bypass the version guard and the read-before-edit policy, so use the write and edit tools instead. Running the project's own formatter or code generator is still expected.
 
 Use the read tool — not shell commands like cat — to inspect text files. Use offset and limit to continue reading large files.
 
-Read an existing file before overwriting it with write (the default fs-observation-policy requires it) and prefer edit for targeted changes.
+Read an existing file before overwriting it with write (the default fs-observation-policy requires it) and prefer edit for targeted changes. Create or replace files with this tool, never with a shell command (`>` redirection, `tee`, or a heredoc): shell writes bypass the version guard and can corrupt a file.
 
-Read a file before editing it (the default fs-observation-policy requires it), unless you just created or edited it in this session.
+Read a file before editing it (the default fs-observation-policy requires it), unless you just created or edited it in this session. Edit files with this tool, never with a shell command (`sed -i`, `perl -pi`, or a `python`/`node` script): shell edits bypass the version guard and the read-before-edit policy.
 
 Use the glob tool — not shell find — to discover files by path pattern.
 
